@@ -2,11 +2,13 @@
 
 import os
 import json
-import ember
+from scripts.ember import Ember
 import argparse
 
 
 def main():
+    ember = Ember()
+
     prog = "train_ember"
     descr = "Train an ember model from a directory with raw feature files"
     parser = argparse.ArgumentParser(prog=prog, description=descr)
@@ -22,6 +24,7 @@ def main():
 
     X_train_path = os.path.join(args.datadir, "X_train.dat")
     y_train_path = os.path.join(args.datadir, "y_train.dat")
+
     if not (os.path.exists(X_train_path) and os.path.exists(y_train_path)):
         print("Creating vectorized features")
         ember.create_vectorized_features(args.datadir, args.featureversion)

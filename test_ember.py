@@ -8,7 +8,7 @@ import argparse
 import lightgbm as lgb
 
 
-def main(model_file='data\\model.txt', binary_path='bins\\invi.exe'):
+def main(model_file='Dataset\\model.txt', binary_path='bins\\invi.exe'):
     # prog = "classify_binaries"
     # descr = "Use a trained ember model to make predictions on PE files"
     # parser = argparse.ArgumentParser(prog=prog, description=descr)
@@ -26,8 +26,8 @@ def main(model_file='data\\model.txt', binary_path='bins\\invi.exe'):
         print("{} does not exist".format(binary_path))
 
     file_data = open(binary_path, "rb").read()
-    print(file_data)
     score = ember.predict_sample(lgbm_model, file_data, 2)
-    print(score)
+
+    print("SCORE: ", score)
 
 main()

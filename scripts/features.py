@@ -190,7 +190,7 @@ class SectionInfo(FeatureType):
         section_vsize = [(s['name'], s['vsize']) for s in sections]
         section_vsize_hashed = FeatureHasher(50, input_type="pair").transform([section_vsize]).toarray()[0]
         
-        entry_name_hashed = FeatureHasher(50, input_type="string").transform([raw_obj['sections']]).toarray()[0]
+        entry_name_hashed = FeatureHasher(50, input_type="string").transform(raw_obj['sections']).toarray()[0]
         characteristics = [p for s in sections for p in s['props'] if s['name'] == raw_obj['entry']]
         characteristics_hashed = FeatureHasher(50, input_type="string").transform([characteristics]).toarray()[0]
 
@@ -533,7 +533,7 @@ class PEFeatureExtractor(object):
         # else:
         #     raise Exception(f"EMBER feature version must be 1 or 2. Not {feature_version}")
         
-        # self.features.append(DataDirectories())
+        #self.features.append(DataDirectories())
         self.dim = sum([fe.dim for fe in self.features])
 
     def raw_features(self, bytez):
