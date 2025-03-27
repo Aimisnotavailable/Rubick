@@ -8,7 +8,7 @@ import argparse
 import lightgbm as lgb
 
 
-def main(model_file='Dataset\\model.txt', binary_path='bins\\invi.exe'):
+def main(model_file='models\\model.txt', binary_path='bins\\invi.exe'):
     # prog = "classify_binaries"
     # descr = "Use a trained ember model to make predictions on PE files"
     # parser = argparse.ArgumentParser(prog=prog, description=descr)
@@ -20,6 +20,7 @@ def main(model_file='Dataset\\model.txt', binary_path='bins\\invi.exe'):
 
     # if not os.path.exists(args.modelpath):
     #     parser.error("ember model {} does not exist".format(args.modelpath))
+
     lgbm_model = lgb.Booster(model_file=model_file)
 
     if not os.path.exists(binary_path):
