@@ -1,3 +1,4 @@
+
 import pygame
 import sys
 from abc import ABC, abstractmethod
@@ -9,7 +10,6 @@ class Panel(object):
         self.size = size
         self.pos = pos
         self.color = color
-        self.font = pygame.font.Font(size=font_size)
         self.image = pygame.Surface(self.size, pygame.SRCALPHA)
 
     def img(self):
@@ -22,6 +22,19 @@ class Panel(object):
     def update(self):
         raise NotImplementedError
 
+class Text(object):
+
+    def __init__(self, text, font : str = None, size : int = 20, pos : list[float] = [0, 0]):
+        if font:
+            self.font = pygame.font.Font(font, size=size)
+        else:
+            self.font = pygame.font.Font(size=size)
+        self.text = text
+        self.pos = pos
+        
+    def render(self, surf : pygame.Surface, color : list[int] = [255, 255, 255], offset:list[float]=[0,0]):
+        surf.blit(self.font.render(self.text, True, color), (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+
 class LogoPanel(Panel):
 
     def __init__(self, size : list[int], pos : list[int], color : list[int], font_size : int):
@@ -33,13 +46,15 @@ class LogoPanel(Panel):
 
         self.cube = projection.Cube()
 
+        self.text = Text("RUBICK", size=20, pos=[5, 46])
+
     def update(self):
 
         self.image.fill(self.color)
 
         self.x += 0.02
         self.y += 0.03
-        self.z += 0.02
+        self.z += 0.04
 
     def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
         self.update()
@@ -49,7 +64,7 @@ class LogoPanel(Panel):
         self.cube.render(self.img(), self.x, self.y, self.z, scale=10, offset=(20,30), fill_color=(0, 100, 0))
         self.cube.render(self.img(), self.x, self.y, self.z, scale=10, offset=(35,15), fill_color=(0, 100, 0))
 
-        self.img().blit(self.font.render(f'RUBICK', True, (255, 255, 255)), (5, 46))        
+        self.text.render(self.img())
         super().render(surf, offset)
 
 class Window(engine.Engine):
