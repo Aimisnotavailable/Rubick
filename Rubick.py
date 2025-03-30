@@ -1,6 +1,8 @@
 
 import pygame
 import sys
+import math
+import random
 from abc import ABC, abstractmethod
 from guiscripts import engine, projection
 
@@ -12,14 +14,12 @@ class Panel(object):
         self.color = color
         self.image = pygame.Surface(self.size, pygame.SRCALPHA)
 
-    def img(self):
-        return self.image
-    
     def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
-        surf.blit(self.img(), [self.pos[0] - offset[0], self.pos[1] - offset[1]])
+        surf.blit(self.image, [self.pos[0] - offset[0], self.pos[1] - offset[1]])
 
     @abstractmethod
     def update(self):
+        self.image.fill(self.color)
         raise NotImplementedError
 
 class Text(object):
@@ -52,19 +52,72 @@ class LogoPanel(Panel):
 
         self.image.fill(self.color)
 
-        self.x += 0.02
-        self.y += 0.03
-        self.z += 0.04
+        self.x += 0.018
+        self.y += 0.023
+        self.z += 0.027
 
     def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
         self.update()
         
-        self.cube.render(self.img(), self.x, self.y, self.z, scale=10, offset=(20, 15), fill_color=(0, 100, 0))
-        self.cube.render(self.img(), self.x, self.y, self.z, scale=10, offset=(35,30), fill_color=(0, 100, 0))
-        self.cube.render(self.img(), self.x, self.y, self.z, scale=10, offset=(20,30), fill_color=(0, 100, 0))
-        self.cube.render(self.img(), self.x, self.y, self.z, scale=10, offset=(35,15), fill_color=(0, 100, 0))
+        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(20, 15), fill_color=(0, 100, 0))
+        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(35,30), fill_color=(0, 100, 0))
+        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(20,30), fill_color=(0, 100, 0))
+        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(35,15), fill_color=(0, 100, 0))
 
-        self.text.render(self.img())
+        self.text.render(self.image)
+        super().render(surf, offset)
+
+
+class LoadingIndicatorPanel(Panel):
+
+    def __init__(self, size : list[int], pos : list[int], color : list[int], font_size : int):
+        super().__init__(size, pos, color, font_size)
+        self.angle = 0
+
+    def update(self):
+
+        self.image.fill(self.color)
+        self.angle += 8
+        pygame.draw.circle(self.image, (160, 32, 240, 200), (self.size[0] // 2, self.size[1] // 2), 20, 6, True, False, False, False)
+        
+    def render(self, surf, offset = [0, 0]):
+        self.update()
+        image = pygame.transform.rotate(self.image, self.angle)
+        image_rect = image.get_rect(center=(self.size[0] // 2 + 0.001 * math.cos(math.radians(self.angle)), self.size[1] // 2 + 0.001 * math.sin(math.radians(self.angle))))
+
+        surf.blit(image, (image_rect[0] - offset[0], image_rect[1] - offset[1]))
+
+class LoadingPanel(Panel):
+    
+    def __init__(self, size : list[int], pos : list[int], color : list[int], font_size : int):
+        super().__init__(size, pos, color, font_size)
+        self.indicator = LoadingIndicatorPanel((40, 40), (0, 0), (0, 0, 0, 0), 20)
+
+    def update(self):
+        self.image.fill(self.color)
+
+    def render(self, surf, offset = [0, 0]):
+        self.update()
+
+        self.indicator.render(self.image)
+
+        super().render(surf, offset)
+
+class MainPanel(Panel):
+
+    def __init__(self, size : list[int], pos : list[int], color : list[int], font_size : int):
+        super().__init__(size, pos, color, font_size)
+
+        self.load = LoadingPanel((40, 40), [self.size[0] // 2, self.size[1] // 2], (0, 0, 0, 0), 20)
+    
+    def update(self):
+        self.image.fill(self.color)
+
+    def render(self, surf, offset = [0, 0]):
+        self.update()
+
+        self.load.render(self.image)
+
         super().render(surf, offset)
 
 class Window(engine.Engine):
@@ -72,17 +125,20 @@ class Window(engine.Engine):
         super().__init__(dim, font_size)
 
         pygame.display.set_caption("Rubick")
-        self.cube = projection.Cube()
+        # self.cube = projection.Cube()
 
-        self.logo = LogoPanel([60, 60], (0, 0), (255, 0, 0, 100), 20)
+        self.logo = LogoPanel([60, 60], (0, 0), (160, 32, 240, 100), 20)
+
+        self.main = MainPanel([440, 350], (60, 0), (0, 155, 0, 180), 20)
 
         self.clicking = False
+
 
     def run(self, debug=False):
 
         while True:
 
-            self.display.fill((100, 0, 0))
+            self.display.fill((0, 0, 0))
 
             mpos = [pygame.mouse.get_pos()[0] // 2, pygame.mouse.get_pos()[1] // 2]
 
@@ -98,9 +154,15 @@ class Window(engine.Engine):
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.clicking = False
+
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_d:
+                        debug = not debug
             
             self.logo.render(self.display)
-            
+            self.main.render(self.display)
+
             if debug:
                 grid_size = 30
 
@@ -121,4 +183,4 @@ class Window(engine.Engine):
             pygame.display.update()
             self.clock.tick(60)
 
-Window((1000, 700)).run(debug=True)
+Window((1000, 700)).run(debug=False)
