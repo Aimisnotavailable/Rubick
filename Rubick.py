@@ -3,6 +3,7 @@ import pygame
 import sys
 import math
 import random
+import os
 from abc import ABC, abstractmethod
 from guiscripts import engine, projection
 
@@ -103,12 +104,58 @@ class LoadingPanel(Panel):
 
         super().render(surf, offset)
 
+class FileTab(Panel):
+    def __init__(self, file_type : str, size : list[int], pos : list[int], color : list[int], font_size : int):
+        super().__init__(size, pos, color, font_size)
+        self.file_type = file_type
+        self.text = Text(self.file_type, size=20)
+
+    def update(self):
+        self.image.fill(self.color)
+
+    def render(self, surf, offset = [0, 0]):
+        self.update()
+        self.text.render(self.image, color=(0, 0, 0))
+        pygame.draw.rect(self.image, (0, 0, 0), (0, 0, *self.size), 2)
+        super().render(surf, offset)
+
+class FileExplorer(Panel):
+
+    def __init__(self, size : list[int], pos : list[int], color : list[int], font_size : int):
+        super().__init__(size, pos, color, font_size)
+        self.current_dir = os.getcwd()
+        self.file_tabs : list[FileTab] = []
+
+        self.load_dir()
+
+    def load_dir(self):
+        count = 0
+        size = [80, 20]
+
+        for dir in os.listdir(self.current_dir):
+            if os.path.isdir(dir):
+                self.file_tabs.append(FileTab(dir, size, [0, size[1] * count], (255, 255, 255), 20))
+                count += 1
+
+    def update(self):
+        self.image.fill(self.color)
+
+    def render(self, surf, offset = [0, 0]):
+        self.update()
+
+        for file_tab in self.file_tabs:
+            file_tab.render(self.image)
+
+        super().render(surf, offset)
+
 class MainPanel(Panel):
 
     def __init__(self, size : list[int], pos : list[int], color : list[int], font_size : int):
         super().__init__(size, pos, color, font_size)
 
         self.load = LoadingPanel((40, 40), [self.size[0] // 2, self.size[1] // 2], (0, 0, 0, 0), 20)
+
+        self.file = FileExplorer(size, (0, 0), color, font_size)
     
     def update(self):
         self.image.fill(self.color)
@@ -118,6 +165,7 @@ class MainPanel(Panel):
 
         self.load.render(self.image)
 
+        self.file.render(self.image)
         super().render(surf, offset)
 
 class Window(engine.Engine):
