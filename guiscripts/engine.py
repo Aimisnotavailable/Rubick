@@ -12,7 +12,7 @@ class Engine(ABC):
         
         self.font = pygame.font.Font(size=font_size)
         pygame.font.init()
-    
+        
     @abstractmethod
     def run(self):
         raise NotImplementedError
