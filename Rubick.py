@@ -18,6 +18,8 @@ class Panel(object):
         self.ishoverable = hoverable
         self.isclicakble = clickable
 
+        self.hovered = False
+
         self.panel_objects : list[Panel] = []
 
     def set_parent(self, parent):
@@ -132,16 +134,31 @@ class LoadingPanel(Panel):
 class FileTab(Panel):
 
     def __init__(self, file_type : str, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color)
+        super().__init__(size, pos, color, hoverable=hoverable, clickable=clickable)
         self.file_type = file_type
         self.text = Text(self.file_type, size=20)
+
+        self.border_color = (0, 0, 0)
 
     def update(self):
         self.image.fill(self.color)
 
-    def draw_border(self, color=(0, 0, 0)):
-        pygame.draw.rect(self.image, color, (0, 0, *self.size), 2)
+        if self.hovered:
+            self.border_color = (255, 0, 0)
+        else:
+            self.border_color = (0, 0, 0)
 
+    def draw_border(self, color=(0, 0, 0)):
+        pygame.draw.rect(self.image, self.border_color, (0, 0, *self.size), 2)
+
+    def hover(self):
+        if self.ishoverable:
+            self.hovered = True
+    
+    def onclick(self):
+        if self.isclicakble:
+            return self.file_type
+                    
     def render(self, surf, offset = [0, 0]):
         self.update()
         self.text.render(self.image, color=(0, 0, 0), offset=(-20, 0))
@@ -152,31 +169,40 @@ class FileExplorer(Panel):
 
     def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
         super().__init__(size, pos, color)
+        os.chdir("C://")
         self.current_dir = os.getcwd()
         self.file_tabs : list[FileTab] = []
 
         self.load_dir()
 
     def load_dir(self):
-        count = 0
+        count = 1
         size = [240, 20]
+
+        tab = FileTab('..', size, [0, 0], (255, 255, 255), hoverable=True, clickable=True)
+        self.add_tab(tab)
 
         for dir in os.listdir(self.current_dir):
             if os.path.isdir(dir):
-                tab = FileTab(dir, size, [0, size[1] * count], (255, 255, 255), 20)
-                tab.set_parent(self)
-                self.file_tabs.append(tab)
-                self.panel_objects.append(tab)
+                tab = FileTab(dir, size, [0, size[1] * count], (255, 255, 255), hoverable=True, clickable=True)
+                self.add_tab(tab=tab)
                 count += 1
+
+    def add_tab(self, tab : FileTab):
+        tab.set_parent(self)
+        self.file_tabs.append(tab)
+        self.panel_objects.append(tab)
+
+    def reload(self, new_path):
+        os.chdir(new_path)
+        print(os.getcwd())
+        self.current_dir = new_path
+        self.file_tabs.clear()
+        self.panel_objects.clear()
+        self.load_dir()
 
     def update(self):
         self.image.fill(self.color)
-
-        if self.current_dir != os.getcwd():
-            self.current_dir = os.getcwd()
-            self.file_tabs.clear()
-            self.panel_objects.clear()
-            self.load_dir()
 
     def render(self, surf, offset = [0, 0]):
         self.update()
@@ -223,6 +249,8 @@ class Window(engine.Engine):
 
         self.clicking = False
 
+        self.click = False
+
 
     def parse(self, panel_objects : list[Panel]) -> list[Panel]:
         panel_objects_list = []
@@ -238,7 +266,7 @@ class Window(engine.Engine):
     def run(self, debug=False):
 
         while True:
-
+            self.click = False
             self.display.fill((0, 0, 0))
 
             mpos = [pygame.mouse.get_pos()[0] // 2, pygame.mouse.get_pos()[1] // 2]
@@ -252,7 +280,8 @@ class Window(engine.Engine):
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         self.clicking = True
-                
+                        self.click = True
+
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.clicking = False
@@ -263,16 +292,21 @@ class Window(engine.Engine):
                         debug = not debug
 
             if m_rect.colliderect(self.main.rect()):
-                panel_objects = self.parse(self.main.panel_objects)
+                panel_objects : list[FileTab] = self.parse(self.main.file.panel_objects)
 
                 for panel_object in panel_objects:
                     if m_rect.colliderect(panel_object.rect()):
-                        pass
+                        panel_object.hover()
+                        if self.click:
+                            new_path = f'{self.main.file.current_dir}\\{panel_object.onclick()}'
+                            self.main.file.reload(new_path=new_path)
+                            break
+                    else:
+                        panel_object.hovered = False
 
+            print(self.main.file.current_dir)
             self.logo.render(self.display)
             self.main.render(self.display)
-
-            
 
             if debug:
                 grid_size = 30
@@ -295,3 +329,5 @@ class Window(engine.Engine):
             self.clock.tick(60)
 
 Window((1000, 700)).run(debug=False)
+
+
