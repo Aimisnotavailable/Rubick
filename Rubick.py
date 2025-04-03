@@ -6,234 +6,12 @@ import random
 import os
 from abc import ABC, abstractmethod
 from guiscripts import engine, projection
+from guiscripts.panel import Panel
+from guiscripts.file import FileExplorer, FileTab
+from guiscripts.load import LoadingPanel
+from guiscripts.logo import LogoPanel
+from guiscripts.mainpanel import MainPanel
 
-class Panel(object):
-
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False):
-        self.size = size
-        self.parent : Panel = None
-        self.pos = pos
-        self.color = color
-        self.image = pygame.Surface(self.size, pygame.SRCALPHA)
-        self.ishoverable = hoverable
-        self.isclicakble = clickable
-
-        self.hovered = False
-
-        self.panel_objects : list[Panel] = []
-
-    def set_parent(self, parent):
-        self.parent = parent 
-
-    def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
-        surf.blit(self.image, [self.pos[0] - offset[0], self.pos[1] - offset[1]])
-
-    def get_world_pos(self):
-        if self.parent:
-            return [self.pos[0] + self.parent.get_world_pos()[0], self.pos[1] + self.parent.get_world_pos()[1]]
-        else:
-            return self.pos
-    
-    def rect(self):
-        return pygame.Rect(*self.get_world_pos(), *self.size)
-    
-    @abstractmethod
-    def hover(self):
-        raise NotImplementedError
-    
-    @abstractmethod
-    def onclick(self):
-        raise NotImplementedError
-    
-    @abstractmethod
-    def update(self):
-        self.image.fill(self.color)
-        raise NotImplementedError
-
-class Text(object):
-
-    def __init__(self, text, font : str = None, size : int = 20, pos : list[float] = [0, 0]):
-        if font:
-            self.font = pygame.font.Font(font, size=size)
-        else:
-            self.font = pygame.font.Font(size=size)
-        self.text = text
-        self.pos = pos
-        
-    def render(self, surf : pygame.Surface, color : list[int] = [255, 255, 255], offset:list[float]=[0,0]):
-        surf.blit(self.font.render(self.text, True, color), (self.pos[0] - offset[0], self.pos[1] - offset[1]))
-
-class LogoPanel(Panel):
-
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color)
-
-        self.x = 0
-        self.y = 0
-        self.z = 0
-
-        self.cube = projection.Cube()
-
-        self.text = Text("RUBICK", size=20, pos=[5, 46])
-
-    def update(self):
-
-        self.image.fill(self.color)
-
-        self.x += 0.018
-        self.y += 0.023
-        self.z += 0.027
-
-    def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
-        self.update()
-        
-        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(20, 15), fill_color=(0, 100, 0))
-        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(35,30), fill_color=(0, 100, 0))
-        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(20,30), fill_color=(0, 100, 0))
-        self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(35,15), fill_color=(0, 100, 0))
-
-        self.text.render(self.image)
-        super().render(surf, offset)
-
-
-class LoadingIndicatorPanel(Panel):
-
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color)
-        self.angle = 0
-
-    def update(self):
-
-        self.image.fill(self.color)
-        self.angle += 8
-        pygame.draw.circle(self.image, (160, 32, 240, 200), (self.size[0] // 2, self.size[1] // 2), 20, 6, True, False, False, False)
-        
-    def render(self, surf, offset = [0, 0]):
-        self.update()
-        image = pygame.transform.rotate(self.image, self.angle)
-        image_rect = image.get_rect(center=(self.size[0] // 2 + 0.001 * math.cos(math.radians(self.angle)), self.size[1] // 2 + 0.001 * math.sin(math.radians(self.angle))))
-
-        surf.blit(image, (image_rect[0] - offset[0], image_rect[1] - offset[1]))
-
-class LoadingPanel(Panel):
-    
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):    
-        super().__init__(size, pos, color)
-        self.indicator = LoadingIndicatorPanel((40, 40), (0, 0), (0, 0, 0, 0), 20)
-
-    def update(self):
-        self.image.fill(self.color)
-
-    def render(self, surf, offset = [0, 0]):
-        self.update()
-
-        self.indicator.render(self.image)
-
-        super().render(surf, offset)
-
-class FileTab(Panel):
-
-    def __init__(self, file_type : str, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color, hoverable=hoverable, clickable=clickable)
-        self.file_type = file_type
-        self.text = Text(self.file_type, size=20)
-
-        self.border_color = (0, 0, 0)
-
-    def update(self):
-        self.image.fill(self.color)
-
-        if self.hovered:
-            self.border_color = (255, 0, 0)
-        else:
-            self.border_color = (0, 0, 0)
-
-    def draw_border(self, color=(0, 0, 0)):
-        pygame.draw.rect(self.image, self.border_color, (0, 0, *self.size), 2)
-
-    def hover(self):
-        if self.ishoverable:
-            self.hovered = True
-    
-    def onclick(self):
-        if self.isclicakble:
-            return self.file_type
-                    
-    def render(self, surf, offset = [0, 0]):
-        self.update()
-        self.text.render(self.image, color=(0, 0, 0), offset=(-20, 0))
-        self.draw_border()
-        super().render(surf, offset)
-
-class FileExplorer(Panel):
-
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color)
-        os.chdir("C://")
-        self.current_dir = os.getcwd()
-        self.file_tabs : list[FileTab] = []
-
-        self.load_dir()
-
-    def load_dir(self):
-        count = 1
-        size = [240, 20]
-
-        tab = FileTab('..', size, [0, 0], (255, 255, 255), hoverable=True, clickable=True)
-        self.add_tab(tab)
-
-        for dir in os.listdir(self.current_dir):
-            if os.path.isdir(dir):
-                tab = FileTab(dir, size, [0, size[1] * count], (255, 255, 255), hoverable=True, clickable=True)
-                self.add_tab(tab=tab)
-                count += 1
-
-    def add_tab(self, tab : FileTab):
-        tab.set_parent(self)
-        self.file_tabs.append(tab)
-        self.panel_objects.append(tab)
-
-    def reload(self, new_path):
-        os.chdir(new_path)
-        print(os.getcwd())
-        self.current_dir = new_path
-        self.file_tabs.clear()
-        self.panel_objects.clear()
-        self.load_dir()
-
-    def update(self):
-        self.image.fill(self.color)
-
-    def render(self, surf, offset = [0, 0]):
-        self.update()
-
-        for file_tab in self.file_tabs:
-            file_tab.render(self.image)
-
-        super().render(surf, offset)
-
-class MainPanel(Panel):
-
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color)
-
-        self.load = LoadingPanel((40, 40), [self.size[0] // 2, self.size[1] // 2], (0, 0, 0, 0), 20)
-
-        self.file = FileExplorer(size, (0, 0), color, parent=self)
-        self.file.set_parent(self)
-
-        self.panel_objects.append(self.file)
-    
-    def update(self):
-        self.image.fill(self.color)
-
-    def render(self, surf, offset = [0, 0]):
-        self.update()
-
-        self.load.render(self.image)
-
-        self.file.render(self.image)
-        super().render(surf, offset)
 
 class Window(engine.Engine):
 
@@ -251,6 +29,7 @@ class Window(engine.Engine):
 
         self.click = False
 
+        self.scroll = [0, 0]
 
     def parse(self, panel_objects : list[Panel]) -> list[Panel]:
         panel_objects_list = []
@@ -270,7 +49,7 @@ class Window(engine.Engine):
             self.display.fill((0, 0, 0))
 
             mpos = [pygame.mouse.get_pos()[0] // 2, pygame.mouse.get_pos()[1] // 2]
-            m_rect = pygame.Rect(*mpos, 2, 2)
+            m_rect = pygame.Rect(*mpos, 1, 1)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -281,6 +60,12 @@ class Window(engine.Engine):
                     if event.button == 1:
                         self.clicking = True
                         self.click = True
+                    
+                    if event.button == 4:
+                        self.scroll[1] = min(self.main.file.max_scroll, self.scroll[1] + self.main.file.file_tabs[0].size[1])
+                    
+                    if event.button == 5:
+                        self.scroll[1] = max(0, self.scroll[1] - self.main.file.file_tabs[0].size[1])
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
@@ -300,13 +85,13 @@ class Window(engine.Engine):
                         if self.click:
                             new_path = f'{self.main.file.current_dir}\\{panel_object.onclick()}'
                             self.main.file.reload(new_path=new_path)
+                            self.scroll = [0, 0]
                             break
                     else:
                         panel_object.hovered = False
 
-            print(self.main.file.current_dir)
             self.logo.render(self.display)
-            self.main.render(self.display)
+            self.main.render(self.display, self)
 
             if debug:
                 grid_size = 30
