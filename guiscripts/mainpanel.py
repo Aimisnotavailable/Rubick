@@ -11,8 +11,6 @@ class MainPanel(Panel):
         self.load = LoadingPanel((40, 40), [self.size[0] // 2, self.size[1] // 2], (0, 0, 0, 0), 20)
 
         self.file = FileExplorer(size, (0, 0), color, parent=self)
-        self.file.set_parent(self)
-
         self.panel_objects.append(self.file)
     
     def update(self):

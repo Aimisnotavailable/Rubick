@@ -3,9 +3,9 @@ from abc import abstractmethod
 
 class Panel(object):
 
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False):
+    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent=None):
         self.size = size
-        self.parent : Panel = None
+        self.parent : Panel = parent
         self.pos = pos
         self.color = color
         self.image = pygame.Surface(self.size, pygame.SRCALPHA)
@@ -15,9 +15,6 @@ class Panel(object):
         self.hovered = False
 
         self.panel_objects : list[Panel] = []
-
-    def set_parent(self, parent):
-        self.parent = parent 
 
     def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
         surf.blit(self.image, [self.pos[0] - offset[0], self.pos[1] - offset[1]])

@@ -1,4 +1,5 @@
 import pygame
+import os
 from guiscripts.projection import Cube
 from guiscripts.panel import Panel
 from guiscripts.text import Text
@@ -14,7 +15,7 @@ class LogoPanel(Panel):
 
         self.cube = Cube()
 
-        self.text = Text("RUBICK", size=20, pos=[5, 46])
+        self.text = Text("RUBICK", font=f'{os.getcwd()}/gui_resources/RobotoMono-Medium.ttf', size=12, pos=[9, 46])
 
     def update(self):
 
