@@ -75,6 +75,9 @@ class FileExplorer(Panel):
                 self.add_tab(tab=tab)
                 count += 1
 
+        if len(self.file_tabs) == 1:
+            self.add_tab(FileTab("No Folders Found", self.tab_size, [0, self.tab_size[1] * count], self.color, hoverable=False, clickable=False, parent=self))
+
     def add_tab(self, tab : FileTab):
         self.file_tabs.append(tab)
         self.panel_objects.append(tab)
@@ -85,24 +88,35 @@ class FileExplorer(Panel):
     def check_file_write_access(self, path):
         return os.access(path, os.W_OK)
     
+    def reload_objects(self):
+        self.file_tabs.clear()
+        self.panel_objects.clear()
+        self.load_dir()
+
     def reload(self, new_path):
         if self.check_file_read_access(new_path) and self.check_file_write_access(new_path):
+            old_path : str = self.current_dir
             try:
                 os.chdir(new_path)
                 self.current_dir = new_path
-                self.file_tabs.clear()
-                self.panel_objects.clear()
-                self.load_dir()
+                self.reload_objects()
             except PermissionError:
-                return
+                os.chdir(old_path)
+                self.current_dir = old_path
+                self.reload_objects()
+                
 
     def update(self):
         self.image.fill(self.color)
 
     def render(self, surf, window, offset = [0, 0]):
         self.update()
-    
-        self.max_scroll = max(0, self.tab_size[1] * len(self.file_tabs) - (window.display.get_height() // self.tab_size[1]) * self.tab_size[1])
+
+        # Calculate max scroll based on the excess size of the entire file tab image by computing (tab size * no of tabs) - the window height
+        # Set 0 as the maximum value for downward scroll and the excess as the upward scroll
+        # Scrolls are applied negatively -> to move up and down we have to subtract the scroll from the current position of the tab
+        self.max_scroll = max(0, self.tab_size[1] * len(self.file_tabs) - (self.size[1] // self.tab_size[1]) * self.tab_size[1])
+
         if self.max_scroll > 0:
             for i in range(max(self.tab_size[1], self.tab_size[1] + window.scroll[1]), self.tab_size[1] * len(self.file_tabs), self.tab_size[1]):
                 idx = i//self.tab_size[1]

@@ -10,7 +10,9 @@ class MainPanel(Panel):
 
         self.load = LoadingPanel((40, 40), [self.size[0] // 2, self.size[1] // 2], (0, 0, 0, 0), 20)
 
-        self.file = FileExplorer(size, (0, 0), color, parent=self)
+        self.file = FileExplorer((size[0], size[1]-30), (0, 30), color, parent=self)
+
+        self.file_info = Panel((60, 30), (60, 0), (255, 255, 255))
         self.panel_objects.append(self.file)
     
     def update(self):
@@ -20,6 +22,6 @@ class MainPanel(Panel):
         self.update()
 
         self.load.render(self.image)
-
+        self.file_info.render(self.image)
         self.file.render(self.image, window=window)
         super().render(surf, offset)

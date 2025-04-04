@@ -63,7 +63,6 @@ class Window(engine.Engine):
                     
                     if event.button == 4:
                         self.scroll[1] = min(self.main.file.max_scroll, self.scroll[1] + self.main.file.file_tabs[0].size[1])
-                    
                     if event.button == 5:
                         self.scroll[1] = max(0, self.scroll[1] - self.main.file.file_tabs[0].size[1])
 
