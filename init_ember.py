@@ -50,7 +50,7 @@ def main():
 
         print("Training LightGBM model")
         lgbm_model = ember.train_model(args.datadir, params, args.featureversion)
-        lgbm_model.save_model(os.path.join(args.datadir, "model.txt"))
+        lgbm_model.save_model(os.path.join(args.datadir, "model.bin"))
 
 
 if __name__ == "__main__":

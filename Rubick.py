@@ -4,6 +4,7 @@ import sys
 import math
 import random
 import os
+import threading
 from abc import ABC, abstractmethod
 from ember_api import EmberModel
 from guiscripts import engine, projection
@@ -35,6 +36,7 @@ class Window(engine.Engine):
         self.scroll = ""
         
         self.ember = EmberModel(self.assets)
+        self.ember_thread : threading.Thread = None
 
     def parse(self, panel_objects : list[Panel]) -> list[Panel]:
         panel_objects_list = []
@@ -102,7 +104,11 @@ class Window(engine.Engine):
                     if m_rect.colliderect(panel_object.rect()):
                         panel_object.hover()
                         if self.click:
-                            self.ember.get_prediction(f'{self.main.folder.current_dir}\\{panel_object.onclick()}')
+                            if self.ember_thread and self.ember_thread.is_alive():
+                                print("Process is still running")
+                            else:
+                                self.ember_thread = threading.Thread(target=self.ember.get_prediction, args=(f"{self.main.folder.current_dir}\\{panel_object.onclick()}",))
+                                self.ember_thread.start()
                     else:
                         panel_object.hovered = False
 
@@ -119,7 +125,7 @@ class Window(engine.Engine):
                         self.main.file.scroll_down()
 
             self.logo.render(self.display)
-            self.main.render(self.display)
+            self.main.render(self.display, load=(self.ember_thread and self.ember_thread.is_alive()))
 
             if debug:
                 grid_size = 30
