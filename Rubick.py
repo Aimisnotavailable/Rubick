@@ -5,11 +5,13 @@ import math
 import random
 import os
 from abc import ABC, abstractmethod
+from ember_api import EmberModel
 from guiscripts import engine, projection
 from guiscripts.panel import Panel
 from guiscripts.file import FileExplorer, FileTab
 from guiscripts.load import LoadingPanel
 from guiscripts.logo import LogoPanel
+from guiscripts.assets import Assets
 from guiscripts.mainpanel import MainPanel
 
 
@@ -20,16 +22,19 @@ class Window(engine.Engine):
 
         pygame.display.set_caption("Rubick")
         # self.cube = projection.Cube()
+        self.assets = Assets()
 
         self.logo = LogoPanel([60, 60], (0, 0), (160, 32, 240, 100), 20)
 
-        self.main = MainPanel([440, 350], (60, 0), (0, 155, 0, 180), 20)
+        self.main = MainPanel([440, 350], (60, 0), (0, 155, 0, 180), 20, assets=self.assets)
 
         self.clicking = False
 
         self.click = False
 
-        self.scroll = [0, 0]
+        self.scroll = ""
+        
+        self.ember = EmberModel(self.assets)
 
     def parse(self, panel_objects : list[Panel]) -> list[Panel]:
         panel_objects_list = []
@@ -51,6 +56,7 @@ class Window(engine.Engine):
             mpos = [pygame.mouse.get_pos()[0] // 2, pygame.mouse.get_pos()[1] // 2]
             m_rect = pygame.Rect(*mpos, 1, 1)
 
+            self.scroll = ""
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -60,11 +66,11 @@ class Window(engine.Engine):
                     if event.button == 1:
                         self.clicking = True
                         self.click = True
-                    
+
                     if event.button == 4:
-                        self.scroll[1] = min(self.main.file.max_scroll, self.scroll[1] + self.main.file.file_tabs[0].size[1])
+                        self.scroll = "down"
                     if event.button == 5:
-                        self.scroll[1] = max(0, self.scroll[1] - self.main.file.file_tabs[0].size[1])
+                        self.scroll = "up"
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
@@ -76,21 +82,44 @@ class Window(engine.Engine):
                         debug = not debug
 
             if m_rect.colliderect(self.main.rect()):
+                panel_objects : list[FileTab] = self.parse(self.main.folder.panel_objects)
+
+                for panel_object in panel_objects:
+                    if m_rect.colliderect(panel_object.rect()):
+                        panel_object.hover()
+                        if self.click:
+                            new_path = f'{self.main.folder.current_dir}\\{panel_object.onclick()}'
+                            self.main.folder.reload(new_path=new_path)
+                            self.main.file.reload(new_path=new_path)
+                            self.main.folder.scroll = [0, 0]
+                            self.main.file.scroll = [0, 0]
+                            break
+                    else:
+                        panel_object.hovered = False
                 panel_objects : list[FileTab] = self.parse(self.main.file.panel_objects)
 
                 for panel_object in panel_objects:
                     if m_rect.colliderect(panel_object.rect()):
                         panel_object.hover()
                         if self.click:
-                            new_path = f'{self.main.file.current_dir}\\{panel_object.onclick()}'
-                            self.main.file.reload(new_path=new_path)
-                            self.scroll = [0, 0]
-                            break
+                            self.ember.get_prediction(f'{self.main.folder.current_dir}\\{panel_object.onclick()}')
                     else:
                         panel_object.hovered = False
 
+                if m_rect.colliderect(self.main.folder.rect()):
+                    if self.scroll == "up":
+                        self.main.folder.scroll_up()
+                    elif self.scroll == "down":
+                        self.main.folder.scroll_down()
+                
+                if m_rect.colliderect(self.main.file.rect()):
+                    if self.scroll == "up":
+                        self.main.file.scroll_up()
+                    elif self.scroll == "down":
+                        self.main.file.scroll_down()
+
             self.logo.render(self.display)
-            self.main.render(self.display, self)
+            self.main.render(self.display)
 
             if debug:
                 grid_size = 30

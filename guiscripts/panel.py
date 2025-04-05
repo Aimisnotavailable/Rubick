@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 class Panel(object):
 
-    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent=None):
+    def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent=None, assets=None):
         self.size = size
         self.parent : Panel = parent
         self.pos = pos
@@ -11,7 +11,7 @@ class Panel(object):
         self.image = pygame.Surface(self.size, pygame.SRCALPHA)
         self.ishoverable = hoverable
         self.isclicakble = clickable
-
+        self.assets = assets
         self.hovered = False
 
         self.panel_objects : list[Panel] = []
