@@ -6,7 +6,10 @@ import random
 import os
 import threading
 from abc import ABC, abstractmethod
-from ember_api import EmberModel
+
+from scripts.ember_api import EmberModel
+from datascripts.handler import Handler
+
 from guiscripts import engine, projection
 from guiscripts.panel import Panel
 from guiscripts.file import FileExplorer, FileTab
@@ -37,6 +40,8 @@ class Window(engine.Engine):
         
         self.ember = EmberModel(self.assets)
         self.ember_thread : threading.Thread = None
+
+        self.data_handler = Handler()
 
     def parse(self, panel_objects : list[Panel]) -> list[Panel]:
         panel_objects_list = []
@@ -104,14 +109,15 @@ class Window(engine.Engine):
                     if m_rect.colliderect(panel_object.rect()):
                         panel_object.hover()
                         if self.click:
-                            if self.ember_thread and self.ember_thread.is_alive():
-                                print("Process is still running")
-                            else:
-                                self.ember_thread = threading.Thread(target=self.ember.get_prediction, args=(f"{self.main.folder.current_dir}\\{panel_object.onclick()}",))
-                                self.ember_thread.start()
+                            if panel_object.isclicakble:
+                                if self.ember_thread and self.ember_thread.is_alive():
+                                    print("Process is still running")
+                                else:
+                                    self.ember_thread = threading.Thread(target=self.ember.get_prediction, args=(self.data_handler, f"{self.main.folder.current_dir}\\{panel_object.onclick()}",))
+                                    self.ember_thread.start()
                     else:
                         panel_object.hovered = False
-
+                print(self.data_handler.get_result())
                 if m_rect.colliderect(self.main.folder.rect()):
                     if self.scroll == "up":
                         self.main.folder.scroll_up()

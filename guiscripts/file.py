@@ -77,9 +77,9 @@ class FileExplorer(Panel):
                     self.add_tab(tab=tab)
                     count += 1
             if len(self.file_tabs) == 1:
-                self.add_tab(FileTab("No Folders Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, hoverable=False, clickable=False, parent=self, assets=self.assets))
+                self.add_tab(FileTab("No Folders Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, parent=self, assets=self.assets))
         else:
-            tab = FileTab(f'Filetype : {self.file_type}', self.tab_size, [0, 0], self.tab_color, hoverable=True, clickable=True, parent=self, assets=self.assets)
+            tab = FileTab(f'Filetype : {self.file_type}', self.tab_size, [0, 0], self.tab_color, parent=self, assets=self.assets)
             self.add_tab(tab)
 
             for dir in os.listdir(self.current_dir):
@@ -87,8 +87,9 @@ class FileExplorer(Panel):
                     tab = FileTab(dir, self.tab_size, [0, self.tab_size[1] * count], self.tab_color, hoverable=True, clickable=True, parent=self, assets=self.assets)
                     self.add_tab(tab=tab)
                     count += 1
+
             if len(self.file_tabs) == 1:
-                self.add_tab(FileTab("No Files Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, hoverable=False, clickable=False, parent=self, assets=self.assets))
+                self.add_tab(FileTab("No Files Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, parent=self, assets=self.assets))
 
     def add_tab(self, tab : FileTab):
         self.file_tabs.append(tab)
