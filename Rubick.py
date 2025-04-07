@@ -18,7 +18,6 @@ from guiscripts.logo import LogoPanel
 from guiscripts.assets import Assets
 from guiscripts.mainpanel import MainPanel
 
-
 class Window(engine.Engine):
 
     def __init__(self, dim=..., font_size=20):
@@ -89,49 +88,65 @@ class Window(engine.Engine):
                         debug = not debug
 
             if m_rect.colliderect(self.main.rect()):
-                panel_objects : list[FileTab] = self.parse(self.main.folder.panel_objects)
 
-                for panel_object in panel_objects:
-                    if m_rect.colliderect(panel_object.rect()):
-                        panel_object.hover()
-                        if self.click:
-                            new_path = f'{self.main.folder.current_dir}\\{panel_object.onclick()}'
-                            self.main.folder.reload(new_path=new_path)
-                            self.main.file.reload(new_path=new_path)
-                            self.main.folder.scroll = [0, 0]
-                            self.main.file.scroll = [0, 0]
-                            break
-                    else:
-                        panel_object.hovered = False
-                panel_objects : list[FileTab] = self.parse(self.main.file.panel_objects)
+                if self.data_handler.get_status() == "waiting":
+                    panel_objects : list[FileTab] = self.parse(self.main.folder.panel_objects)
 
-                for panel_object in panel_objects:
-                    if m_rect.colliderect(panel_object.rect()):
-                        panel_object.hover()
-                        if self.click:
-                            if panel_object.isclicakble:
-                                if self.ember_thread and self.ember_thread.is_alive():
-                                    print("Process is still running")
-                                else:
-                                    self.ember_thread = threading.Thread(target=self.ember.get_prediction, args=(self.data_handler, f"{self.main.folder.current_dir}\\{panel_object.onclick()}",))
-                                    self.ember_thread.start()
-                    else:
-                        panel_object.hovered = False
-                print(self.data_handler.get_result())
-                if m_rect.colliderect(self.main.folder.rect()):
-                    if self.scroll == "up":
-                        self.main.folder.scroll_up()
-                    elif self.scroll == "down":
-                        self.main.folder.scroll_down()
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                new_path = f'{self.main.folder.current_dir}\\{panel_object.onclick()}'
+                                self.main.folder.reload(new_path=new_path)
+                                self.main.file.reload(new_path=new_path)
+                                self.main.folder.scroll = [0, 0]
+                                self.main.file.scroll = [0, 0]
+                                break
+                        else:
+                            panel_object.hovered = False
+                    panel_objects : list[FileTab] = self.parse(self.main.file.panel_objects)
+
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                if panel_object.isclicakble:
+                                    if self.ember_thread and self.ember_thread.is_alive():
+                                        print("Process is still running")
+                                    else:
+                                        self.ember_thread = threading.Thread(target=self.ember.get_prediction, args=(self.data_handler, f"{self.main.folder.current_dir}\\{panel_object.onclick()}",))
+                                        self.ember_thread.start()
+                                        self.data_handler.status = "fetching"
+                        else:
+                            panel_object.hovered = False
                 
-                if m_rect.colliderect(self.main.file.rect()):
-                    if self.scroll == "up":
-                        self.main.file.scroll_up()
-                    elif self.scroll == "down":
-                        self.main.file.scroll_down()
+                    if m_rect.colliderect(self.main.folder.rect()):
+                        if self.scroll == "up":
+                            self.main.folder.scroll_up()
+                        elif self.scroll == "down":
+                            self.main.folder.scroll_down()
+                    
+                    if m_rect.colliderect(self.main.file.rect()):
+                        if self.scroll == "up":
+                            self.main.file.scroll_up()
+                        elif self.scroll == "down":
+                            self.main.file.scroll_down()
+
+                if self.data_handler.get_status() == "done":
+                    self.main.results.text.set_text(f'Results : {self.data_handler.get_result()}')
+                    panel_objects : list[Panel] = self.parse(self.main.results.panel_objects)
+
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                if panel_object.isclicakble:
+                                    panel_object.onclick(self.data_handler)
+                        else:
+                            panel_object.hovered = False
 
             self.logo.render(self.display)
-            self.main.render(self.display, load=(self.ember_thread and self.ember_thread.is_alive()))
+            self.main.render(self.display, status=self.data_handler.get_status())
 
             if debug:
                 grid_size = 30
