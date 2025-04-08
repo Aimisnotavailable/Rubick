@@ -28,8 +28,7 @@ class FileTab(Panel):
             self.hovered = True
     
     def onclick(self):
-        if self.isclicakble:
-            return self.file_name
+        return self.file_name
     
     def rect(self):
         return pygame.Rect(*self.get_screen_pos(), *self.size)
@@ -106,17 +105,19 @@ class FileExplorer(Panel):
         self.panel_objects.clear()
         self.load_dir()
 
-    def reload(self, new_path):
+    def reload(self, new_path) -> str:
         if self.check_file_read_access(new_path) and self.check_file_write_access(new_path):
             old_path : str = self.current_dir
             try:
                 os.chdir(new_path)
                 self.current_dir = new_path
                 self.reload_objects()
+                return "Success"
             except PermissionError:
                 os.chdir(old_path)
                 self.current_dir = old_path
                 self.reload_objects()
+                return "Permission Error"
                 
 
     def update(self):

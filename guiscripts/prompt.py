@@ -49,15 +49,19 @@ class Prompt(Panel):
 
         self.panel_objects.append(self.button)
 
-        self.text = Text("", font=f'{self.assets.assets_dir["gui_resources"]}\\RobotoMono-Bold.ttf', size=12, pos=[200, 100], parent=self)
+        self.text : dict[str, Text] = {}
     
+    def add_new_text(self, key, font_size, pos):
+        self.text[key] = Text("", font=f'{self.assets.assets_dir["gui_resources"]}\\RobotoMono-Bold.ttf', size=font_size, pos=pos, parent=self)
+
     def update(self):
         self.image.fill(self.color)
 
     def render(self, surf, offset = [0, 0], text=""):
         self.update()
 
-        self.text.render(self.image, offset=[self.text.get_world_pos()[0] - self.text.rect(True)[0], self.text.get_world_pos()[1] - self.text.rect(True)[1]])
+        for text in self.text.values():
+            text.render(self.image, offset=[text.get_world_pos()[0] - text.rect(True)[0], text.get_world_pos()[1] - text.rect(True)[1]])
 
         self.button.render(self.image)
         super().render(surf, offset)

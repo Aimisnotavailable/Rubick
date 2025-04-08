@@ -13,18 +13,18 @@ class EmberModel:
         self.ember = Ember()
         self.assets = assets
 
-    def get_prediction(self, handler : Handler, binary_path : str, model_file ='\\model.bin'):
+    def get_prediction(self, handler : Handler, binary_path : SystemError):
         try:
-            lgbm_model = lgb.Booster(model_file=f'{self.assets.assets_dir["ember"]}\\{model_file}')
+            lgbm_model = lgb.Booster(model_file=f'{self.assets.assets_dir["ember_model"]}')
             if not os.path.exists(binary_path):
                 print("{} does not exist".format(binary_path))
 
             file_data = open(binary_path, "rb").read()
             score = self.ember.predict_sample(lgbm_model, file_data, 1)
 
-            print(score)
             handler.set_result(score)
             handler.set_status("done")
 
         except Exception as e:
-            print(e)
+            handler.set_result(f'{e}')
+            handler.set_status("error")

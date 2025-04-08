@@ -27,7 +27,7 @@ class LogoPanel(Panel):
 
     def render(self, surf : pygame.Surface, offset : list[int] = [0, 0]):
         self.update()
-        
+        pygame.draw.rect(self.image, (160, 32, 240, 180), (0, 0, 60, 60))
         self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(20, 15), fill_color=(0, 100, 0))
         self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(35,30), fill_color=(0, 100, 0))
         self.cube.render(self.image, self.x, self.y, self.z, scale=10, offset=(20,30), fill_color=(0, 100, 0))

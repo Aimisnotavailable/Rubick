@@ -17,8 +17,13 @@ class MainPanel(Panel):
         self.file = FileExplorer((220, size[1]-30), (220, 30), color, file_type="exe", parent=self, assets=assets)
 
         self.results = Prompt((400, 200), (20, 75), color, parent=self, assets=assets)
+        self.results.add_new_text("score", 12, (200, 80))
+        self.results.add_new_text("results", 12, (200, 100))
 
-        self.panel_status : dict[str:list[Panel]] = {"fetching" : [self.load], "waiting" : [self.file, self.folder, self.header], "done" : [self.results]}
+        self.error = Prompt((400, 200), (20, 75), color, parent=self, assets=assets)
+        self.error.add_new_text("error", 12, (200, 100))
+        
+        self.panel_status : dict[str:list[Panel]] = {"fetching" : [self.load], "waiting" : [self.file, self.folder, self.header], "done" : [self.results], "error" : [self.error]}
 
         self.panel_objects.append(self.folder)
         self.panel_objects.append(self.file)
