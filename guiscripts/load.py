@@ -5,7 +5,7 @@ from guiscripts.panel import Panel
 class LoadingIndicatorPanel(Panel):
 
     def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):
-        super().__init__(size, pos, color)
+        super().__init__(size, pos, color, parent=parent)
         self.angle = 0
 
     def update(self):
@@ -24,8 +24,8 @@ class LoadingIndicatorPanel(Panel):
 class LoadingPanel(Panel):
     
     def __init__(self, size : list[int],  pos : list[int], color : list[int],  hoverable : bool=False, clickable : bool=False, parent = None):    
-        super().__init__(size, pos, color)
-        self.indicator = LoadingIndicatorPanel((40, 40), (0, 0), (0, 0, 0, 0), 20)
+        super().__init__(size, pos, color, parent=parent)
+        self.indicator = LoadingIndicatorPanel((40, 40), (0, 0), (0, 0, 0, 0), 20, parent=self)
 
     def update(self):
         self.image.fill(self.color)

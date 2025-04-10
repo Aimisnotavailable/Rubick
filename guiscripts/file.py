@@ -28,8 +28,7 @@ class FileTab(Panel):
             self.hovered = True
     
     def onclick(self):
-        if self.isclicakble:
-            return self.file_name
+        return self.file_name
     
     def rect(self):
         return pygame.Rect(*self.get_screen_pos(), *self.size)
@@ -77,9 +76,9 @@ class FileExplorer(Panel):
                     self.add_tab(tab=tab)
                     count += 1
             if len(self.file_tabs) == 1:
-                self.add_tab(FileTab("No Folders Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, hoverable=False, clickable=False, parent=self, assets=self.assets))
+                self.add_tab(FileTab("No Folders Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, parent=self, assets=self.assets))
         else:
-            tab = FileTab(f'Filetype : {self.file_type}', self.tab_size, [0, 0], self.tab_color, hoverable=True, clickable=True, parent=self, assets=self.assets)
+            tab = FileTab(f'Filetype : {self.file_type}', self.tab_size, [0, 0], self.tab_color, parent=self, assets=self.assets)
             self.add_tab(tab)
 
             for dir in os.listdir(self.current_dir):
@@ -87,8 +86,9 @@ class FileExplorer(Panel):
                     tab = FileTab(dir, self.tab_size, [0, self.tab_size[1] * count], self.tab_color, hoverable=True, clickable=True, parent=self, assets=self.assets)
                     self.add_tab(tab=tab)
                     count += 1
+
             if len(self.file_tabs) == 1:
-                self.add_tab(FileTab("No Files Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, hoverable=False, clickable=False, parent=self, assets=self.assets))
+                self.add_tab(FileTab("No Files Found", self.tab_size, [0, self.tab_size[1] * count], self.tab_color, parent=self, assets=self.assets))
 
     def add_tab(self, tab : FileTab):
         self.file_tabs.append(tab)
@@ -105,17 +105,19 @@ class FileExplorer(Panel):
         self.panel_objects.clear()
         self.load_dir()
 
-    def reload(self, new_path):
+    def reload(self, new_path) -> str:
         if self.check_file_read_access(new_path) and self.check_file_write_access(new_path):
             old_path : str = self.current_dir
             try:
                 os.chdir(new_path)
                 self.current_dir = new_path
                 self.reload_objects()
+                return "Success"
             except PermissionError:
                 os.chdir(old_path)
                 self.current_dir = old_path
                 self.reload_objects()
+                return "Permission Error"
                 
 
     def update(self):

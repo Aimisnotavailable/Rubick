@@ -4,16 +4,19 @@ import sys
 import math
 import random
 import os
+import threading
 from abc import ABC, abstractmethod
-from ember_api import EmberModel
+
+from scripts.ember_api import EmberModel
+from datascripts.handler import Handler
+
 from guiscripts import engine, projection
 from guiscripts.panel import Panel
 from guiscripts.file import FileExplorer, FileTab
 from guiscripts.load import LoadingPanel
 from guiscripts.logo import LogoPanel
-from guiscripts.assets import Assets
+from datascripts.assets import Assets
 from guiscripts.mainpanel import MainPanel
-
 
 class Window(engine.Engine):
 
@@ -24,7 +27,7 @@ class Window(engine.Engine):
         # self.cube = projection.Cube()
         self.assets = Assets()
 
-        self.logo = LogoPanel([60, 60], (0, 0), (160, 32, 240, 100), 20)
+        self.logo = LogoPanel([60, self.display.get_height()], (0, 0), (160, 32, 240, 100), 20)
 
         self.main = MainPanel([440, 350], (60, 0), (0, 155, 0, 180), 20, assets=self.assets)
 
@@ -35,6 +38,9 @@ class Window(engine.Engine):
         self.scroll = ""
         
         self.ember = EmberModel(self.assets)
+        self.ember_thread : threading.Thread = None
+
+        self.data_handler = Handler()
 
     def parse(self, panel_objects : list[Panel]) -> list[Panel]:
         panel_objects_list = []
@@ -82,44 +88,84 @@ class Window(engine.Engine):
                         debug = not debug
 
             if m_rect.colliderect(self.main.rect()):
-                panel_objects : list[FileTab] = self.parse(self.main.folder.panel_objects)
 
-                for panel_object in panel_objects:
-                    if m_rect.colliderect(panel_object.rect()):
-                        panel_object.hover()
-                        if self.click:
-                            new_path = f'{self.main.folder.current_dir}\\{panel_object.onclick()}'
-                            self.main.folder.reload(new_path=new_path)
-                            self.main.file.reload(new_path=new_path)
-                            self.main.folder.scroll = [0, 0]
-                            self.main.file.scroll = [0, 0]
-                            break
-                    else:
-                        panel_object.hovered = False
-                panel_objects : list[FileTab] = self.parse(self.main.file.panel_objects)
+                if self.data_handler.get_status() == "waiting":
+                    panel_objects : list[FileTab] = self.parse(self.main.folder.panel_objects)
 
-                for panel_object in panel_objects:
-                    if m_rect.colliderect(panel_object.rect()):
-                        panel_object.hover()
-                        if self.click:
-                            self.ember.get_prediction(f'{self.main.folder.current_dir}\\{panel_object.onclick()}')
-                    else:
-                        panel_object.hovered = False
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                if panel_object.isclicakble:
+                                    new_path = f'{self.main.folder.current_dir}\\{panel_object.onclick()}'
+                                    if "error" in self.main.folder.reload(new_path=new_path).lower():
+                                        self.data_handler.set_status("error")
+                                        self.data_handler.set_result("Permission Denied")
+                                        break
 
-                if m_rect.colliderect(self.main.folder.rect()):
-                    if self.scroll == "up":
-                        self.main.folder.scroll_up()
-                    elif self.scroll == "down":
-                        self.main.folder.scroll_down()
+                                    self.main.file.reload(new_path=new_path)
+                                    self.main.folder.scroll = [0, 0]
+                                    self.main.file.scroll = [0, 0]
+                                    break
+                        else:
+                            panel_object.hovered = False
+                    panel_objects : list[FileTab] = self.parse(self.main.file.panel_objects)
+
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                if panel_object.isclicakble:
+                                    if self.ember_thread and self.ember_thread.is_alive():
+                                        print("Process is still running")
+                                    else:
+                                        self.ember_thread = threading.Thread(target=self.ember.get_prediction, args=(self.data_handler, f"{self.main.folder.current_dir}\\{panel_object.onclick()}",))
+                                        self.ember_thread.start()
+                                        self.data_handler.status = "fetching"
+                        else:
+                            panel_object.hovered = False
                 
-                if m_rect.colliderect(self.main.file.rect()):
-                    if self.scroll == "up":
-                        self.main.file.scroll_up()
-                    elif self.scroll == "down":
-                        self.main.file.scroll_down()
+                    if m_rect.colliderect(self.main.folder.rect()):
+                        if self.scroll == "up":
+                            self.main.folder.scroll_up()
+                        elif self.scroll == "down":
+                            self.main.folder.scroll_down()
+                    
+                    if m_rect.colliderect(self.main.file.rect()):
+                        if self.scroll == "up":
+                            self.main.file.scroll_up()
+                        elif self.scroll == "down":
+                            self.main.file.scroll_down()
+
+                if self.data_handler.get_status() == "done":
+                    self.main.results.text['score'].set_text(f'Score : {self.data_handler.get_result()}')
+                    self.main.results.text['results'].set_text(f'Results : {"Suspicious File Detected" if self.data_handler.get_result() >= 0.5 else "You Good"}')
+                    panel_objects : list[Panel] = self.parse(self.main.results.panel_objects)
+
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                if panel_object.isclicakble:
+                                    panel_object.onclick(self.data_handler)
+                        else:
+                            panel_object.hovered = False
+                
+                if self.data_handler.get_status() == "error":
+                    self.main.error.text['error'].set_text(f'Error : {self.data_handler.get_result()}')
+                    panel_objects : list[Panel] = self.parse(self.main.error.panel_objects)
+
+                    for panel_object in panel_objects:
+                        if m_rect.colliderect(panel_object.rect()):
+                            panel_object.hover()
+                            if self.click:
+                                if panel_object.isclicakble:
+                                    panel_object.onclick(self.data_handler)
+                        else:
+                            panel_object.hovered = False
 
             self.logo.render(self.display)
-            self.main.render(self.display)
+            self.main.render(self.display, status=self.data_handler.get_status())
 
             if debug:
                 grid_size = 30
