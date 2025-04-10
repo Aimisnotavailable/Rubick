@@ -533,7 +533,7 @@ class PEFeatureExtractor(object):
         # else:
         #     raise Exception(f"EMBER feature version must be 1 or 2. Not {feature_version}")
         
-        #self.features.append(DataDirectories())
+        # self.features.append(DataDirectories())
         self.dim = sum([fe.dim for fe in self.features])
 
     def raw_features(self, bytez):
